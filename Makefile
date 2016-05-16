@@ -10,6 +10,7 @@ RM=/bin/rm
 
 GIT=/usr/bin/git
 GZIP=/bin/gzip
+TAR=/bin/tar
 
 src/tests=test-lex test-ast test-hopscotch
 tests=$(src/tests:%=src/%)
@@ -32,9 +33,11 @@ clean:
 	$(RM) -f $(targets) $(joqe:=.o) $(utf-cat:=.o) \
     $(tests) $(tests:=.o) $(tests:=.tx) $(deps)
 
-dist:
+dist: src/joqe.tab.c src/joqe.tab.h
 	@DEST=joqe-$$($(GIT) describe --abbrev=4 --always --tags); \
-  $(GIT) archive --prefix=$$DEST/ -o $$DEST.tar.gz HEAD
+  $(GIT) archive --prefix=$$DEST/ -o $$DEST.tar HEAD && \
+  $(TAR) rf $$DEST.tar --xform="s?^?$$DEST/?" $^ && \
+  $(GZIP) -f $$DEST.tar
 
 distclean: clean
 	$(RM) -f src/joqe.tab.h src/joqe.tab.c
