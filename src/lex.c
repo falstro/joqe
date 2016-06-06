@@ -195,8 +195,8 @@ number(lexparam l)
     top: if(v < 0 || v >= base) switch(c) {
       // N.B. starting with a . is not legal JSON.
       case '.': if(state < 3) {
-          state = 3; token = REAL;
           if(state == 1) base = 10;
+          state = 3; token = REAL;
         } else goto end; break;
       case 'e':
       case 'E': if(state < 4) { state = 4; token = REAL; } else goto end; break;
