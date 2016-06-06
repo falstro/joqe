@@ -33,11 +33,16 @@ consume(lexparam l)
 {
   return joqe_lex_source_read(&l.builder->src);
 }
+static inline int
+peek(lexparam l)
+{
+  return l.builder->src.c;
+}
 
 static int
 ident(lexparam l)
 {
-  int c = l.builder->src.c;
+  int c = peek(l);
   while(c) switch(c) {
     case NONIDENTS:
       c = 0; break;
@@ -71,7 +76,7 @@ nonident(int c)
 static int
 keyword(lexparam l, const char *word, int token, int offset, int len)
 {
-  int c = l.builder->src.c;
+  int c = peek(l);
   for(;offset < len;offset++) {
     if (c != word[offset])
       break;
@@ -100,7 +105,7 @@ hex2dec(int c)
 static int
 string(lexparam l, int delimiter)
 {
-  int c = l.builder->src.c;
+  int c = peek(l);
   joqe_lex_source *s = &l.builder->src;
   while(c >= 0)
   {
@@ -174,7 +179,7 @@ number(lexparam l)
 {
   int token = INTEGER;
 
-  int c = l.builder->src.c;
+  int c = peek(l);
   int base = 10;
   int state = 0;
   double dval = 0;
@@ -238,7 +243,7 @@ int
 joqe_yylex(JOQE_YYSTYPE *yylval, joqe_build *build)
 {
   lexparam l = {yylval, build};
-  int n, c = l.builder->src.c;
+  int n, c = peek(l);
   while(1) switch(c) {
     case SINGLES:
       consume(l);
