@@ -10,10 +10,10 @@ producing the JSON itself, regardless of input. Joqe is designed to
 scale with complexity, completing simple tasks should be easy and
 require a minimal expression.
 
-Joqe takes inspiration from both XPath and JavaScript, and (obviously)
-JSON. There are a few fundamental differences, in particular to XPath,
-so be careful to pay attention to the caveats below if you're familiar
-with XPath.
+Joqe takes inspiration from both XQuery and JavaScript, as well as XSLT,
+and (obviously) JSON. There are a few fundamental differences, in
+particular to XPath, so be careful to pay attention to the caveats below
+if you're familiar with XPath.
 
 Path expressions
 ================
