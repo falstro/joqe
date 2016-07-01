@@ -228,6 +228,7 @@ destroy_fd (joqe_lex_source *s)
   s->read = read_eof;
   s->destroy = destroy_eof;
   free(s->u.buf);
+  s->u.buf = 0;
 }
 
 joqe_lex_source
@@ -273,7 +274,9 @@ joqe_lex_source_file(const char *path)
   }
 
   joqe_lex_source s = joqe_lex_source_fd(fd);
-  s.destroy = destroy_file;
+  if(s.destroy == destroy_fd)
+    s.destroy = destroy_file;
+
   return s;
 }
 
