@@ -4,6 +4,7 @@
 #include "build.h"
 #include "joqe.tab.h"
 #include "lex.h"
+#include "err.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -129,6 +130,9 @@ json_element(int token, JOQE_YYSTYPE *yylval, joqe_build *b, joqe_node *n)
     case 0:
       joqe_yyerror(b, "unexpected end of input");
       return -1;
+    case INVALID_STRING: {
+      joqe_yyerror(b, joqe_invalid_string(yylval->integer));
+    } return token;
     default: {
       char message[] = "unexpected token 0x    ";
       sprintf(&message[19], "%02x", token);

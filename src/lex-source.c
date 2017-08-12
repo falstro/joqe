@@ -74,7 +74,15 @@ detect_byte_order(const char *s, int len, int *bom)
 int
 joqe_lex_source_push(joqe_lex_source *s, uint32_t cp)
 {
-  // render UTF-8
+  /* We always consume UTF-8, so whatever the source enconding, render UTF-8 and
+     push that to be consumed */
+  if(cp == 0xa) {
+    s->line++;
+    s->col = 0;
+  } else {
+    s->col++;
+  }
+
   if(cp < 0x80)
     return s->c = cp;
 
@@ -237,6 +245,8 @@ joqe_lex_source_fd(int fd)
   joqe_lex_source s = {fd};
   int bom;
 
+  if(!fd) s.name = "<stdin>";
+
   s.u.buf = malloc(BUFSZ);
 
   // fill the buffers
@@ -274,6 +284,8 @@ joqe_lex_source_file(const char *path)
   }
 
   joqe_lex_source s = joqe_lex_source_fd(fd);
+  s.name = path;
+
   if(s.destroy == destroy_fd)
     s.destroy = destroy_file;
 

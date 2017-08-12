@@ -8,7 +8,7 @@
 %token INVALID_STRING
 
 %type<string> STRING IDENTIFIER name
-%type<integer> INTEGER
+%type<integer> INTEGER INVALID_STRING
 %type<real> REAL
 
 %type<expr> expr scalar or-expr and-expr test-expr term-expr
@@ -62,6 +62,11 @@
 start       : construct-expr
 {
   build->root = $1;
+}
+            | error INVALID_STRING
+{
+  joqe_yyerror(build, joqe_invalid_string($2));
+  return -1;
 }
             ;
 

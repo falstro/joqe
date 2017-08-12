@@ -20,7 +20,15 @@ static int q = 0;
 int
 joqe_yyerror(joqe_build *build, const char *msg)
 {
-  if(!q) fprintf(stderr, "%s: %s\n", argv0, msg);
+  if(!q) {
+    if(build)
+      fprintf(stderr, "%s: %s:%d:%d: %s\n",
+              argv0, build->src.name ? build->src.name : "<none>",
+              build->src.line + 1, build->src.col,
+              msg);
+    else
+      fprintf(stderr, "%s: %s\n", argv0, msg);
+  }
   return 0;
 }
 

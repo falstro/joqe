@@ -55,8 +55,10 @@ ident(lexparam l)
       break;
   }
 
-  if(!(l.yylval->string = joqe_build_closestring(l.builder)))
+  if(!(l.yylval->string = joqe_build_closestring(l.builder))) {
+    l.yylval->integer = INVALID_OVERLONG;
     return INVALID_STRING;
+  }
   return IDENTIFIER;
 }
 
@@ -112,13 +114,17 @@ string(lexparam l, int delimiter)
     if(c == delimiter)
     {
       consume(l);
-      if(!(l.yylval->string = joqe_build_closestring(l.builder)))
+      if(!(l.yylval->string = joqe_build_closestring(l.builder))) {
+        l.yylval->integer = INVALID_OVERLONG;
         return INVALID_STRING;
+      }
       return STRING;
     }
 
-    if(c < 0x20)
+    if(c < 0x20) {
+      l.yylval->integer = INVALID_CONTROL_CHARACTER;
       return INVALID_STRING;
+    }
 
     if(c == '\\')
     {
@@ -132,17 +138,22 @@ string(lexparam l, int delimiter)
           int z = 0;
           do {
             if(z) {
-              if(consume(l) != '\\')
+              if(consume(l) != '\\') {
+                l.yylval->integer = INVALID_UNICODE_SURROGATE;
                 return INVALID_STRING;
-              else if(consume(l) != 'u')
+              } else if(consume(l) != 'u') {
+                l.yylval->integer = INVALID_UNICODE_SURROGATE;
                 return INVALID_STRING;
+              }
             }
             int32_t A = hex2dec(consume(l));
             int32_t B = hex2dec(consume(l));
             int32_t C = hex2dec(consume(l));
             int32_t D = hex2dec(c = consume(l));
-            if((A|B|C|D) < 0 || !c)
-              return INVALID_STRING; //TODO yylval -> error code
+            if((A|B|C|D) < 0 || !c) {
+              l.yylval->integer = INVALID_UNICODE_ESCAPE;
+              return INVALID_STRING;
+            }
 
             z = joqe_utf16(A<<4|B, C<<4|D, z, &u);
           } while(z);
@@ -150,8 +161,10 @@ string(lexparam l, int delimiter)
           c = joqe_lex_source_push(s, u);
         } break;
         default:
-          if(c < 0x20)
+          if(c < 0x20) {
+            l.yylval->integer = INVALID_UNICODE_ESCAPE;
             return INVALID_STRING;
+          }
           break;
       }
     }
@@ -159,7 +172,7 @@ string(lexparam l, int delimiter)
     joqe_build_appendstring(l.builder, c);
     c = consume(l);
   }
-  //TODO error code
+  l.yylval->integer = INVALID_END_OF_INPUT;
   return INVALID_STRING;
 }
 

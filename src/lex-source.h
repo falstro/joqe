@@ -21,6 +21,10 @@ typedef struct joqe_lex_source
     unsigned char *ubuf;
   } u;
 
+  int line;
+  int col;
+  const char *name;
+
   int (*read)(struct joqe_lex_source*);
   void (*destroy)(struct joqe_lex_source*);
 }

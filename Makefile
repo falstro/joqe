@@ -15,7 +15,7 @@ TAR=/bin/tar
 src/tests=test-lex test-ast test-hopscotch
 tests=$(src/tests:%=src/%)
 
-src/joqe=joqe joqe.tab json ast lex lex-source utf build util hopscotch
+src/joqe=joqe joqe.tab json ast lex lex-source utf build err util hopscotch
 joqe=$(src/joqe:%=src/%)
 
 src/utf-cat=utf-cat lex-source utf
@@ -89,7 +89,7 @@ src/test-lex=test-lex.o lex.o lex-source.o build.o \
 src/test-lex: $(src/test-lex:%=src/%)
 
 src/test-ast=test-ast.o json.o joqe.tab.o ast.o lex.o lex-source.o build.o \
-  util.o hopscotch.o utf.o
+  err.o util.o hopscotch.o utf.o
 src/test-ast: $(src/test-ast:%=src/%)
 
 src/test-hopscotch=hopscotch.o
