@@ -12,7 +12,7 @@
 
 #include <assert.h>
 
-#define BUFSZ   0x8000
+#define BUFSZ   0x10000
 #define BUFMASK (BUFSZ-1)
 
 // #define UTF8_BYPASS
