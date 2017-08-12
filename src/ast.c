@@ -653,10 +653,7 @@ eval_posneg(int mul, joqe_ast_expr *e, joqe_node *n, joqe_node *c, joqe_result *
   joqe_nodels *i;
   int rv = 0;
 
-  if(!n) {
-    pe->evaluate(pe, IMPLODE);
-    return ast_unary_implode(e);
-  }
+  if(!n) return ast_unary_implode(e);
 
   joqe_result er = joqe_result_push(r);
 
@@ -741,10 +738,7 @@ eval_not(joqe_ast_expr *e, joqe_node *n, joqe_node *c, joqe_result *r)
 
   joqe_ast_expr *ep = e->u.e;
 
-  if(!n) {
-    ep->evaluate(ep, IMPLODE);
-    return ast_unary_implode(e);
-  }
+  if(!n) return ast_unary_implode(e);
 
   int rv = !ep->evaluate(ep, n, c, 0);
 
