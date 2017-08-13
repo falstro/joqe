@@ -197,35 +197,42 @@ fail(const char *msg, ...)
 void
 usage(FILE *out)
 {
-  fprintf(out, "Usage:\n\t%s [-hrf] [-I INDENT] [expression [file ...]]\n"
-    "\t%s -P [-hrf] [-I INDENT] [expression ...]\n"
+  fprintf(out, "Usage:\n"
+    "\t%s [options] [--] [expression [file ...]]\n"
+    "\t%s [options] -f expression-file [--] [file ...]\n"
+    "\t%s [options] -P [--] [expression ...]\n"
+    "\n"
+    "Expression interpretation:\n"
+    "\t-f           Read expression from a file.\n"
+    "\t-P           Pipe mode, concatenate all arguments into one expression\n"
+    "\t             and only read from standard in.\n"
     "\n"
     "Options:\n"
-    "\t-h           Print this help.\n"
     "\t-I INDENT    Indent each level by INDENT number of spaces. Implies -f.\n"
     "\t-a           Limit output to ASCII only, encode all 8-bit and multibyte\n"
     "\t             characters using escape sequences (e.g. \\u12cd)\n"
-    "\t-f           Format results. Use twice to align object values into\n"
-    "\t             columns.\n"
+    "\t-F           Format/pretty-print the output. Use twice to align object\n"
+    "\t             values into columns.\n"
     "\t-q           Quiet, fail silently on parsing errors.\n"
-    "\t-P           Pipe mode, concatenate all arguments into one expression\n"
-    "\t             and only read from standard in.\n"
     "\t-r           Print raw (don't quote) strings at the top level. Use\n"
     "\t             twice to suppress quoting of all strings.\n"
-    "\n", argv0, argv0);
+    "\t-h           Print this help.\n"
+    "\n", argv0, argv0, argv0);
 }
 
 int
 main(int argc, char **argv)
 {
   int i, opt, r = 0, p = 0;
+  const char* expfile = 0;
   config c = {};
 
   argv0 = argv[0];
 
-  while((opt = getopt(argc, argv, "hI:fPqra")) != -1) switch(opt) {
+  while((opt = getopt(argc, argv, "hI:af:FqPr")) != -1) switch(opt) {
     case '?': usage(stderr); return 1;
     case 'h': usage(stdout); return 0;
+    case 'f': expfile = optarg; break;
     case 'I': {
       char *e;
       c.ind = strtol(optarg, &e, 0);
@@ -234,7 +241,7 @@ main(int argc, char **argv)
     } break;
     case 'P': p = 1; break;
     case 'q': q = 1; break;
-    case 'f': c.pp++; break;
+    case 'F': c.pp++; break;
     case 'r': c.raw++; break;
     case 'a': c.ascii++; break;
   }
@@ -247,9 +254,11 @@ main(int argc, char **argv)
 
   joqe_ast_construct *cst = 0;
   joqe_build exp = {};
-  if(i < argc) {
+  if(expfile || (i < argc)) {
     joqe_lex_source src;
-    if(p) {
+    if(expfile) {
+      src = joqe_lex_source_file(expfile);
+    } else if(p) {
       src = joqe_lex_source_stringarray(argc-i, argv+i);
       i = argc;
     } else {
