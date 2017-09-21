@@ -156,7 +156,8 @@ int check(const char *exp, joqe_node *in, const char *out)
   if (joqe_yyparse(&expb)) return fail("Unable to parse expression: %s", exp);
 
   joqe_result jr = {};
-  expb.root.construct(&expb.root, in, in, &jr);
+  joqe_ctx ctx = {NULL, in};
+  expb.root.construct(&expb.root, in, &ctx, &jr);
 
   joqe_nodels outls = {.n = outb.root.u.node};
   outls.ll.n = outls.ll.p = &outls.ll;

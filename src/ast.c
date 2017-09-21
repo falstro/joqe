@@ -259,7 +259,7 @@ bool_eval_node(joqe_node rx, joqe_node *n)
 }
 
 static int
-eval_fix_value(joqe_ast_expr *e, joqe_node *n, joqe_node *c, joqe_result *r)
+eval_fix_value(joqe_ast_expr *e, joqe_node *n, joqe_ctx *c, joqe_result *r)
 {
   if(!n) return 0;
   if(n->type == joqe_type_ref_cnt)
@@ -279,7 +279,7 @@ eval_fix_value(joqe_ast_expr *e, joqe_node *n, joqe_node *c, joqe_result *r)
 }
 
 static int
-eval_string_value(joqe_ast_expr *e, joqe_node *n, joqe_node *c, joqe_result *r)
+eval_string_value(joqe_ast_expr *e, joqe_node *n, joqe_ctx *c, joqe_result *r)
 {
   if(!n) return 0;
 
@@ -301,7 +301,7 @@ ast_string_value(const char *s)
 }
 
 static int
-eval_integer_value(joqe_ast_expr *e, joqe_node *n, joqe_node *c, joqe_result *r)
+eval_integer_value(joqe_ast_expr *e, joqe_node *n, joqe_ctx *c, joqe_result *r)
 {
   if(!n) return 0;
 
@@ -322,7 +322,7 @@ ast_integer_value(int i)
 }
 
 static int
-eval_real_value(joqe_ast_expr *e, joqe_node *n, joqe_node *c, joqe_result *r)
+eval_real_value(joqe_ast_expr *e, joqe_node *n, joqe_ctx *c, joqe_result *r)
 {
   if(!n) return 0;
 
@@ -364,7 +364,7 @@ boolean_result(int val, joqe_result *r)
 
 static int
 eval_bor (joqe_ast_expr *e,
-          joqe_node *n, joqe_node *c,
+          joqe_node *n, joqe_ctx *c,
           joqe_result *r)
 {
   joqe_ast_expr *lp = e->u.b.l,
@@ -399,7 +399,7 @@ ast_bor(joqe_ast_expr l, joqe_ast_expr r)
 
 static int
 eval_band(joqe_ast_expr *e,
-          joqe_node *n, joqe_node *c,
+          joqe_node *n, joqe_ctx *c,
           joqe_result *r)
 {
   joqe_ast_expr *lp = e->u.b.l,
@@ -421,7 +421,7 @@ ast_band(joqe_ast_expr l, joqe_ast_expr r)
 }
 
 static int
-eval_compare(joqe_ast_expr *e, joqe_node *n, joqe_node *c, joqe_result *r)
+eval_compare(joqe_ast_expr *e, joqe_node *n, joqe_ctx *c, joqe_result *r)
 {
   joqe_ast_comp_op op = (joqe_ast_comp_op)e->u.b.op;
 
@@ -565,7 +565,7 @@ calc_int(joqe_ast_calc_op op, int a, int b)
 }
 
 static int
-eval_calc(joqe_ast_expr *e, joqe_node *n, joqe_node *c, joqe_result *r)
+eval_calc(joqe_ast_expr *e, joqe_node *n, joqe_ctx *c, joqe_result *r)
 {
   joqe_ast_calc_op op = (joqe_ast_calc_op)e->u.b.op;
 
@@ -647,7 +647,7 @@ ast_calc(joqe_ast_calc_op op, joqe_ast_expr l, joqe_ast_expr r)
 }
 
 static int
-eval_posneg(int mul, joqe_ast_expr *e, joqe_node *n, joqe_node *c, joqe_result *r)
+eval_posneg(int mul, joqe_ast_expr *e, joqe_node *n, joqe_ctx *c, joqe_result *r)
 {
   joqe_ast_expr *pe = e->u.e;
   joqe_nodels *i;
@@ -689,13 +689,13 @@ eval_posneg(int mul, joqe_ast_expr *e, joqe_node *n, joqe_node *c, joqe_result *
 }
 
 static int
-eval_positive(joqe_ast_expr *e, joqe_node *n, joqe_node *c, joqe_result *r)
+eval_positive(joqe_ast_expr *e, joqe_node *n, joqe_ctx *c, joqe_result *r)
 {
   return eval_posneg(1, e, n, c, r);
 }
 
 static int
-eval_negative(joqe_ast_expr *e, joqe_node *n, joqe_node *c, joqe_result *r)
+eval_negative(joqe_ast_expr *e, joqe_node *n, joqe_ctx *c, joqe_result *r)
 {
   return eval_posneg(-1, e, n, c, r);
 }
@@ -733,7 +733,7 @@ ast_positive(joqe_ast_expr e)
 }
 
 static int
-eval_not(joqe_ast_expr *e, joqe_node *n, joqe_node *c, joqe_result *r)
+eval_not(joqe_ast_expr *e, joqe_node *n, joqe_ctx *c, joqe_result *r)
 {
 
   joqe_ast_expr *ep = e->u.e;
@@ -762,7 +762,7 @@ ast_bnot(joqe_ast_expr e)
 }
 
 static int
-eval_context(joqe_ast_expr *e, joqe_node *n, joqe_node *c, joqe_result *r)
+eval_context(joqe_ast_expr *e, joqe_node *n, joqe_ctx *c, joqe_result *r)
 {
   joqe_nodels *i;
   joqe_result jr = joqe_result_push(r);
@@ -777,7 +777,8 @@ eval_context(joqe_ast_expr *e, joqe_node *n, joqe_node *c, joqe_result *r)
   e->u.c.ctx.construct(&e->u.c.ctx, n, c, &jr);
 
   if((i = jr.ls)) do {
-    rv += e->u.c.e->evaluate(e->u.c.e, &i->n, &i->n, r);
+    joqe_ctx stacked = {c, &i->n};
+    rv += e->u.c.e->evaluate(e->u.c.e, &i->n, &stacked, r);
   } while((i = (joqe_nodels*)i->ll.n) != jr.ls);
 
   joqe_result_pop(r, &jr);
@@ -795,7 +796,7 @@ ast_expr_context(joqe_ast_expr e, joqe_ast_construct ctx)
 }
 
 static int
-eval_path(joqe_ast_expr *e, joqe_node *n, joqe_node *c, joqe_result *r)
+eval_path(joqe_ast_expr *e, joqe_node *n, joqe_ctx *c, joqe_result *r)
 {
     return e->u.path.visit(&e->u.path, n, c, r);
 }
@@ -863,7 +864,7 @@ ast_union_path(joqe_ast_path l, joqe_ast_path r)
 
 static int
 visit_local_path (joqe_ast_path *p,
-                  joqe_node *n, joqe_node *c,
+                  joqe_node *n, joqe_ctx *c,
                   joqe_result *r)
 {
   int v = 0;
@@ -893,16 +894,20 @@ ast_local_path()
 
 static int
 visit_context_path (joqe_ast_path *p,
-                    joqe_node *n, joqe_node *c,
+                    joqe_node *n, joqe_ctx *c,
                     joqe_result *r)
 {
   int v = 0;
   if(p->pes) {
-    v = p->pes->visit(p->pes, c, c, r, p->pes);
-    if(!n)
+    if(!n) {
+      // imploding, c is null.
+      v = p->pes->visit(p->pes, n, c, r, p->pes);
       ast_pathelem_free(p->pes);
+    } else {
+      v = p->pes->visit(p->pes, c->node, c, r, p->pes);
+    }
   } else if(n) {
-    if(r) result_nodels(r, c->type)->n = *c;
+    if(r) result_nodels(r, c->node->type)->n = *c->node;
     v = 1; //bool_eval_node(*c, n);
   }
   if(p->punion) {
@@ -943,7 +948,7 @@ visit_pe_free (joqe_ast_pathelem *p, joqe_ast_pathelem *end)
 
 static int
 visit_peflex (joqe_ast_pathelem *p,
-              joqe_node *n, joqe_node *c,
+              joqe_node *n, joqe_ctx *c,
               joqe_result *r, joqe_ast_pathelem *end)
 {
   joqe_nodels *i, *e;
@@ -978,7 +983,7 @@ ast_peflex()
 
 static int
 visit_pename (joqe_ast_pathelem *p,
-              joqe_node *n, joqe_node *c,
+              joqe_node *n, joqe_ctx *c,
               joqe_result *r, joqe_ast_pathelem *end)
 {
   joqe_nodels *i, *e;
@@ -997,7 +1002,7 @@ visit_pename (joqe_ast_pathelem *p,
         joqe_ast_pathelem *nxt = (joqe_ast_pathelem*) p->ll.n;
         found += nxt->visit(nxt, &i->n, c, r, end);
       } else {
-        if(r) result_nodels(r, c->type)->n = joqe_result_copy_node(&i->n);
+        if(r) result_nodels(r, c->node->type)->n = joqe_result_copy_node(&i->n);
         found = 1; //bool_eval_node(i->n, n); ?
       }
     }
@@ -1018,7 +1023,7 @@ ast_pename(const char *name)
 
 static int
 visit_pefilter (joqe_ast_pathelem *p,
-                joqe_node *n, joqe_node *c,
+                joqe_node *n, joqe_ctx *c,
                 joqe_result *r, joqe_ast_pathelem *end)
 {
   joqe_nodels *i, *e;
@@ -1039,7 +1044,7 @@ visit_pefilter (joqe_ast_pathelem *p,
         joqe_ast_pathelem *nxt = (joqe_ast_pathelem*) p->ll.n;
         found += nxt->visit(nxt, &i->n, c, r, end);
       } else {
-        if(r) result_nodels(r, c->type)->n = joqe_result_copy_node(&i->n);
+        if(r) result_nodels(r, c->node->type)->n = joqe_result_copy_node(&i->n);
         found = 1;//bool_eval_node(i->n, n); ?
       }
     }
@@ -1085,7 +1090,7 @@ ast_arrayls_free(joqe_ast_arrayls *p)
 }
 
 static int
-construct_expr (joqe_ast_construct *cst, joqe_node *n, joqe_node *c,
+construct_expr (joqe_ast_construct *cst, joqe_node *n, joqe_ctx *c,
                 joqe_result *r)
 {
   if(!n) {
@@ -1105,7 +1110,7 @@ ast_expr_construct(joqe_ast_expr e)
 
 static int
 construct_object_entry (joqe_ast_construct *cst,
-                        joqe_node *n, joqe_node *c,
+                        joqe_node *n, joqe_ctx *c,
                         joqe_result *r)
 {
   joqe_ast_construct *kc = cst->u.ob.key,
@@ -1171,7 +1176,7 @@ construct_object_entry (joqe_ast_construct *cst,
 
 static int
 construct_object (joqe_ast_construct *cst,
-                  joqe_node *n, joqe_node *c,
+                  joqe_node *n, joqe_ctx *c,
                   joqe_result *r)
 {
   joqe_ast_objectls *i;
@@ -1214,7 +1219,7 @@ ast_object_construct(joqe_ast_object o)
 
 static int
 construct_array_in (joqe_ast_arentry *en,
-                    joqe_node *n, joqe_node *c,
+                    joqe_node *n, joqe_ctx *c,
                     joqe_result *r)
 {
   en->v.construct(&en->v, n, c, r);
@@ -1222,7 +1227,7 @@ construct_array_in (joqe_ast_arentry *en,
 }
 static int
 construct_array  (joqe_ast_construct *cst,
-                  joqe_node *n, joqe_node *c,
+                  joqe_node *n, joqe_ctx *c,
                   joqe_result *r)
 {
   joqe_ast_arrayls *i;
@@ -1271,7 +1276,7 @@ ast_array_construct(joqe_ast_array a)
 
 static int
 construct_context (joqe_ast_construct *cst,
-                   joqe_node *n, joqe_node *c,
+                   joqe_node *n, joqe_ctx *c,
                    joqe_result *r)
 {
   joqe_ast_construct *ctx = cst->u.ctx.context;
@@ -1292,7 +1297,8 @@ construct_context (joqe_ast_construct *cst,
   joqe_result_free_transfer(r, &ctxr);
 
   if((ctxi = ctxr.ls)) do {
-    rc += v->construct(v, &ctxi->n, &ctxi->n, r);
+    joqe_ctx stacked = {c, &ctxi->n};
+    rc += v->construct(v, &ctxi->n, &stacked, r);
   } while((ctxi = (joqe_nodels*)ctxi->ll.n) != ctxr.ls);
 
   return rc;

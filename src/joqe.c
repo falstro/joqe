@@ -151,7 +151,7 @@ dump(joqe_node n, int lvl, config *c)
     case joqe_type_none_integer:
       printf("%ld", n.u.i); break;
     case joqe_type_none_real:
-      printf("%g", n.u.d); break;
+      printf("%f", n.u.d); break;
     case joqe_type_none_true:
       printf("true"); break;
     case joqe_type_none_false:
@@ -285,6 +285,7 @@ main(int argc, char **argv)
   }
 
   joqe_node nullnode = {joqe_type_none_null};
+  joqe_ctx nullctx = {NULL, &nullnode};
 
   do {
     joqe_build bdoc;
@@ -308,10 +309,11 @@ main(int argc, char **argv)
       continue;
     }
 
-    bdoc.root.construct(&bdoc.root, &nullnode, &nullnode, &rdoc);
+    bdoc.root.construct(&bdoc.root, &nullnode, &nullctx, &rdoc);
 
     if(cst) {
-      cst->construct(cst, &rdoc.ls->n, &rdoc.ls->n, &jr);
+      joqe_ctx rootcontext = {NULL, &rdoc.ls->n};
+      cst->construct(cst, rootcontext.node, &rootcontext, &jr);
     } else {
       joqe_nodels *i;
       if((i = rdoc.ls)) do {

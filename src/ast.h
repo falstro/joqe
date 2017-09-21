@@ -29,10 +29,15 @@ typedef struct {
   joqe_ast_arrayls *ls;
 } joqe_ast_array;
 
+typedef struct joqe_ctx {
+  struct joqe_ctx    *stack;
+  joqe_node          *node;
+} joqe_ctx;
+
 typedef struct joqe_ast_construct joqe_ast_construct;
 struct joqe_ast_construct {
   int (*construct) (joqe_ast_construct *cst,
-                    joqe_node *n, joqe_node *c,
+                    joqe_node *n, joqe_ctx *c,
                     joqe_result *r);
   union {
     joqe_node         node;
@@ -56,7 +61,7 @@ typedef struct joqe_ast_pathelem joqe_ast_pathelem;
 
 typedef struct joqe_ast_path {
   int (*visit) (struct joqe_ast_path *p,
-                joqe_node *n, joqe_node *c,
+                joqe_node *n, joqe_ctx *c,
                 joqe_result *r);
 
   joqe_ast_pathelem    *pes;
@@ -65,7 +70,7 @@ typedef struct joqe_ast_path {
 
 typedef
 int (*joqe_ast_expr_eval)(struct joqe_ast_expr *e,
-                          joqe_node *n, joqe_node *c,
+                          joqe_node *n, joqe_ctx *c,
                           joqe_result *r);
 typedef struct joqe_ast_expr {
   joqe_ast_expr_eval evaluate;
@@ -89,7 +94,7 @@ typedef struct joqe_ast_expr {
 struct joqe_ast_pathelem {
   joqe_list     ll;
   int (*visit) (struct joqe_ast_pathelem *p,
-                joqe_node *n, joqe_node *c,
+                joqe_node *n, joqe_ctx *c,
                 joqe_result *r,
                 struct joqe_ast_pathelem *end);
   union {

@@ -144,7 +144,7 @@ json_element(int token, JOQE_YYSTYPE *yylval, joqe_build *b, joqe_node *n)
 
 static int
 json_construct (joqe_ast_construct *c,
-                joqe_node *nn, joqe_node *cc,
+                joqe_node *nn, joqe_ctx *cc,
                 joqe_result *r)
 {
   if(!nn) {
