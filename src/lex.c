@@ -242,14 +242,16 @@ number(lexparam l)
 int
 c_comment(lexparam l)
 {
-  int c;
-  while((c = consume(l))) {
-    if(c == '*')
-      if((c = consume(l)) == '/')
-        return consume(l);
+  int c = consume(l);
+  while(c >= 0) {
+    int oc = c;
+    c = consume(l);
+    if(oc == '*' && c == '/') {
+      return consume(l);
+    }
   }
   // TODO error, end of file within comment.
-  return 0;
+  return c;
 }
 
 int

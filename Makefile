@@ -1,7 +1,8 @@
 BISON=/usr/bin/bison
 CC=gcc
 CFLAGS=-Wall -g -MMD -O3
-LDFLAGS=-lm
+LDFLAGS=
+LDLIBS=-lm
 PREFIX=/usr/local
 DESTDIR=
 
@@ -51,10 +52,10 @@ uninstall:
 	$(RM) -f $(DESTDIR)$(PREFIX)/bin/joqe
 
 joqe: $(joqe:=.o)
-	$(CC) $(LDFLAGS) -o $@ $^
+	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 utf-cat: $(utf-cat:=.o)
-	$(CC) $(LDFLAGS) -o $@ $^
+	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 src/joqe.tab.h: src/joqe.tab.c
 src/joqe.tab.c: joqe.y
