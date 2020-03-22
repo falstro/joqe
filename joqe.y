@@ -29,13 +29,14 @@
 %defines
 
 %{
+#include <stdint.h>
 #include "ast.h"
 #include "lex-source.h"
 #include "build.h"
 %}
 
 %union {
-  int             integer;
+  int64_t         integer;
   const char     *string;
   double          real;
   joqe_ast_expr   expr;

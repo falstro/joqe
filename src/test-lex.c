@@ -24,6 +24,7 @@ main(void)
     joqe_lex_source_string(
       "123 0123 0xabc \"\\u000a\" >= 3.25/ \n"
       "-0.5900001525878906,/**//***//****/ 44.82483003588778 "
+      " 94782104204944 "
       "//[]and abc andab\"d\\\"e\\\"f\" nuke not\""
     )
   );
@@ -44,6 +45,9 @@ main(void)
   assert(joqe_yylex(&yylval, &build) == REAL);
   assert(joqe_yylex(&yylval, &build) == ',');
   assert(joqe_yylex(&yylval, &build) == REAL);
+
+  assert(joqe_yylex(&yylval, &build) == INTEGER);
+  assert(yylval.integer == 94782104204944ll);
 
   assert(joqe_yylex(&yylval, &build) == SLASH2);
   assert(joqe_yylex(&yylval, &build) == '[');

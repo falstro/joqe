@@ -148,7 +148,7 @@ dump(joqe_node n, int lvl, config *c)
         dumpstring(n.u.s, c);
       break;
     case joqe_type_none_integer:
-      printf("%d", n.u.i); break;
+      printf("%ld", n.u.i); break;
     case joqe_type_none_real:
       printf("%g", n.u.d); break;
     case joqe_type_none_true:

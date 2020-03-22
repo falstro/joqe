@@ -3,6 +3,8 @@
 
 #include "util.h"
 
+#include <stdint.h>
+
 #define JOQE_TYPE_VALUE_MASK  0x0f
 #define JOQE_TYPE_KEY_MASK    0x30
 
@@ -54,7 +56,7 @@ typedef struct {
   } k;
   union {
     const char   *s;
-    int           i;
+    int64_t       i;
     double        d;
     joqe_nodels *ls;
   } u;

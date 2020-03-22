@@ -3,6 +3,8 @@
 
 #include "json.h"
 
+#include <stdint.h>
+
 typedef struct joqe_result {
   joqe_nodels *ls;
   joqe_nodels *freels;
@@ -69,7 +71,7 @@ typedef struct joqe_ast_expr {
   joqe_ast_expr_eval evaluate;
   union {
     const char     *s;
-    int             i;
+    int64_t         i;
     double          d;
     joqe_ast_path   path;
     joqe_ast_expr  *e;

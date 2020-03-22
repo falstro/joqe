@@ -195,7 +195,7 @@ number(lexparam l)
   int c = peek(l);
   int base = 10;
   int state = 0;
-  double dval = 0;
+  int64_t ival = 0;
   int fcnt = 0;
   int exp = 0;
   int expmult = 1;
@@ -221,7 +221,8 @@ number(lexparam l)
       case 0: if(v == 0) { state = 1; base = 8; break; } /* fall through */
       case 1: state = 2; goto top;
       case 3: fcnt++; /* fall through */
-      case 2: dval = dval*base + v; break;
+      case 2: ival = ival*base + v;
+              break;
       case 4: state = 5; /* fall through */
       case 5: exp = base*exp + v; break;
     }
@@ -229,11 +230,11 @@ number(lexparam l)
 
   end: switch(token) {
     case REAL:
-      l.yylval->real = dval*pow(base, expmult*exp-fcnt);
+      l.yylval->real = ival*pow(base, expmult*exp-fcnt);
       break;
     case INTEGER:
       // TODO range check
-      l.yylval->integer = (int)dval;
+      l.yylval->integer = ival;
       break;
   }
   return token;
