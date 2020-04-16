@@ -92,11 +92,11 @@ particular when not dealing with arrays.
 If the root object is an array and not an object, you cannot use `[0]`
 directly, as this is a construct expression (see below) that creates an
 array with the zero as the single entry. To select the root element, use
-`/`. This tells the parser that we're looking at a path, thus `/[0]`
+`.`. This tells the parser that we're looking at a path, thus `.[0]`
 would select element zero of the root array. This is also valid when
-using objects, i.e. `/.meta`, but the root object is implied.
+using objects, i.e. `.meta`, but the root object is implied.
 
-The `/` refers to the current node being evaluated, which in the global
+The `.` refers to the current node being evaluated, which in the global
 context would be the root node. When evaluating filters, it refers to
 the node the filter is being matched against. Consider this matrix document
 
@@ -105,10 +105,10 @@ the node the filter is being matched against. Consider this matrix document
 we could select all rows (assuming it's row-major order) having an even
 number in the second position using
 
-    /[/[1] % 2 = 0]
+    .[.[1] % 2 = 0]
 
-the outer `/[]` selects all rows, `/[1] % 2 = 0` filters all rows where
-the second element modulo 2 equals zero (i.e. is even). Note how `/`
+the outer `.[]` selects all rows, `.[1] % 2 = 0` filters all rows where
+the second element modulo 2 equals zero (i.e. is even). Note how `.`
 refers to the root array in the first instance and to the sub-array in
 the second instance. To refer to the context object in the filter
 expression use `//`. The context reference is never implied, and to use
@@ -360,12 +360,12 @@ the second part is then applied to that document yielding
 Inside the expression, the "global" context is no longer accessible, if
 you need it, remember that the context object is being constructed with
 using the outside context, and you can lift the entire object into the
-new document using the context object reference `/`, for example
+new document using the context object reference `.`, for example
 
     {
       "size": meta.count * 2,
       "result": results[0],
-      "root": /
+      "root": .
     }::{
       "offset": size + result.id,
       "main:" root.meta.main,

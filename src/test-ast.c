@@ -41,7 +41,7 @@ int cases(joqe_node *doc)
         "'blue'")
       || check("{..[color < 'c' and tags[] = //meta.tags[1]]::color:hex}", doc,
         "{'blue':'#00f'}")
-      || check("[meta[/ > 100]]", doc, "[3245,121.9]")
+      || check("[meta[. > 100]]", doc, "[3245,121.9]")
       || check("[(results[tags[] > 'warming']::color)]", doc, "['red']")
       || check("[results[tags[] > 'warming'].color]", doc, "['red']")
       || check("[results[tags[] = //meta.tags[0]].color]", doc, "['green']")

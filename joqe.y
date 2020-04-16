@@ -123,14 +123,14 @@ compare-op  : '='                               {$$ = joqe_ast_comp_eq;}
 node-set    : node-path
             | node-set '|' node-path            {$$ = ast.punion($1,$3);}
             ;
-node-path   : '/'                               {$$ = ast.local_path();}
+node-path   : '.'                               {$$ = ast.local_path();}
             | SLASH2                            {$$ = ast.context_path();}
             | name                              {
                                                   $$ = ast.path_chain(
                                                     ast.local_path(),
                                                     ast.pename($1));
                                                 }
-            | '/' name                          {
+            | '.' name                          {
                                                   $$ = ast.path_chain(
                                                     ast.local_path(),
                                                     ast.pename($2));
