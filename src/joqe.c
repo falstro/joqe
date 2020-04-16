@@ -39,6 +39,7 @@ typedef struct {
   const char *nl;
   int         nllen;
   int         ascii;
+  int         array;
 } config;
 
 void dump(joqe_node n, int lvl, config *c);
@@ -81,13 +82,13 @@ void
 dump_vs(joqe_nodels *ns, int lvl, config *c)
 {
   joqe_nodels *ls;
-  int ind = c->ind*lvl+c->nllen;
+  int ind = c->array > 1 || (c->array && lvl <= 1) ? 0 : c->ind*lvl+c->nllen;
   if((ls = ns)) {
     if(ls->n.type == joqe_type_ref_cnt)
       ls = (joqe_nodels*) ls->ll.n;
     goto first;
     do {
-      printf(",");
+      printf("%c", c->array ? ' ' : ',');
       first: if(ind) printf("%-*s", ind, c->nl);
       dump(ls->n, lvl, c);
     } while((ls = (joqe_nodels*)ls->ll.n) != ns);
@@ -167,11 +168,16 @@ dump(joqe_node n, int lvl, config *c)
       }
       break;
     case joqe_type_none_array:
-      if(n.u.ls) {
-        printf("["); dump_vs(n.u.ls, lvl+1, c);
-        printf("%-*s]", PP);
+      if(c->array > 1 || (c->array && !lvl)) {
+        if(n.u.ls)
+          dump_vs(n.u.ls, lvl+1, c);
       } else {
-        printf("[]");
+        if(n.u.ls) {
+          printf("["); dump_vs(n.u.ls, lvl+1, c);
+          printf("%-*s]", PP);
+        } else {
+          printf("[]");
+        }
       }
       break;
 #undef PP
@@ -208,7 +214,7 @@ usage(FILE *out)
     "\t             and only read from standard in.\n"
     "\n"
     "Options:\n"
-    "\t-I INDENT    Indent each level by INDENT number of spaces. Implies -f.\n"
+    "\t-I INDENT    Indent each level by INDENT number of spaces. Implies -F.\n"
     "\t-a           Limit output to ASCII only, encode all 8-bit and multibyte\n"
     "\t             characters using escape sequences (e.g. \\u12cd)\n"
     "\t-F           Format/pretty-print the output. Use twice to align object\n"
@@ -216,6 +222,9 @@ usage(FILE *out)
     "\t-q           Quiet, fail silently on parsing errors.\n"
     "\t-r           Print raw (don't quote) strings at the top level. Use\n"
     "\t             twice to suppress quoting of all strings.\n"
+    "\t-A           Arrays at top level will be 'shell lists' without brackets\n"
+    "\t             and using space as separators.\n"
+    "\t             the double -r is set.\n"
     "\t-h           Print this help.\n"
     "\n", argv0, argv0, argv0);
 }
@@ -229,7 +238,7 @@ main(int argc, char **argv)
 
   argv0 = argv[0];
 
-  while((opt = getopt(argc, argv, "hI:af:FqPr")) != -1) switch(opt) {
+  while((opt = getopt(argc, argv, "hI:af:FqPrA")) != -1) switch(opt) {
     case '?': usage(stderr); return 1;
     case 'h': usage(stdout); return 0;
     case 'f': expfile = optarg; break;
@@ -244,6 +253,7 @@ main(int argc, char **argv)
     case 'F': c.pp++; break;
     case 'r': c.raw++; break;
     case 'a': c.ascii++; break;
+    case 'A': c.array++; break;
   }
   i = optind;
 
