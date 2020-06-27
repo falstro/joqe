@@ -66,6 +66,7 @@ typedef struct joqe_ast_path {
 
   joqe_ast_pathelem    *pes;
   struct joqe_ast_path *punion;
+  int                   i;
 } joqe_ast_path;
 
 typedef
@@ -168,7 +169,7 @@ extern struct joqe_ast_api {
 
   joqe_ast_path (*punion)(joqe_ast_path l, joqe_ast_path r);
   joqe_ast_path (*local_path)();
-  joqe_ast_path (*context_path)();
+  joqe_ast_path (*context_path)(int depth);
   joqe_ast_path (*path_chain)(joqe_ast_path l, joqe_ast_pathelem pe);
 
   joqe_ast_pathelem   (*pefunction)(const char *name, joqe_ast_params p);

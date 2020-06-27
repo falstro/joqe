@@ -283,7 +283,13 @@ joqe_yylex(JOQE_YYSTYPE *yylval, joqe_build *build)
     case '/': {
       n = consume(l);
       if(n == c) {
-        consume(l); return SLASH2;
+        int slashcount = 0;
+        do {
+          slashcount++;
+          n = consume(l);
+        } while(n == c);
+        yylval->integer = slashcount;
+        return SLASH;
       } else if(n == '*') {
         c = c_comment(l);
       } else {

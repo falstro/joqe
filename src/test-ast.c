@@ -37,14 +37,14 @@ int cases(joqe_node *doc)
       || check("1",doc,"1")
       || check("{status}",doc,"{'status':'success'}")
       || check("[results[tags[] > 'warming']::color]", doc, "['red']")
-      || check("..[color < 'c' and tags[] = //meta.tags[1]]::color", doc,
+      || check("..[color < 'c' and tags[] = /meta.tags[1]]::color", doc,
         "'blue'")
-      || check("{..[color < 'c' and tags[] = //meta.tags[1]]::color:hex}", doc,
+      || check("{..[color < 'c' and tags[] = /meta.tags[1]]::color:hex}", doc,
         "{'blue':'#00f'}")
       || check("[meta[. > 100]]", doc, "[3245,121.9]")
       || check("[(results[tags[] > 'warming']::color)]", doc, "['red']")
       || check("[results[tags[] > 'warming'].color]", doc, "['red']")
-      || check("[results[tags[] = //meta.tags[0]].color]", doc, "['green']")
+      || check("[results[tags[] = /meta.tags[0]].color]", doc, "['green']")
       || check("[results[0 or 1].color]", doc, "['red','green']")
       || check("results[0 and 1] or null", doc, "null")
       || check("results[0].color", doc, "'red'")

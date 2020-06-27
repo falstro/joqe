@@ -898,17 +898,29 @@ visit_context_path (joqe_ast_path *p,
                     joqe_result *r)
 {
   int v = 0;
+  int depth;
+  joqe_ctx *cc = c;
+  for(depth = p->i; depth > 0; --depth) {
+    if(!cc) break;
+    cc = cc->stack;
+  }
   if(p->pes) {
     if(!n) {
       // imploding, c is null.
       v = p->pes->visit(p->pes, n, c, r, p->pes);
       ast_pathelem_free(p->pes);
+    } else if(!cc) {
+      v = 0;
     } else {
-      v = p->pes->visit(p->pes, c->node, c, r, p->pes);
+      v = p->pes->visit(p->pes, cc->node, cc, r, p->pes);
     }
   } else if(n) {
-    if(r) result_nodels(r, c->node->type)->n = *c->node;
-    v = 1; //bool_eval_node(*c, n);
+    if(cc) {
+      if(r) result_nodels(r, cc->node->type)->n = *cc->node;
+      v = 1; //bool_eval_node(*cc, n);
+    } else {
+      v = 0;
+    }
   }
   if(p->punion) {
     // TODO union the result, not just concatenate.
@@ -920,9 +932,10 @@ visit_context_path (joqe_ast_path *p,
   return v;
 }
 static joqe_ast_path
-ast_context_path()
+ast_context_path(int depth)
 {
   joqe_ast_path p = {visit_context_path};
+  p.i = depth;
   return p;
 }
 

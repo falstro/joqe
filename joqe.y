@@ -4,11 +4,11 @@
 %token MOD
 %token NEQ LEQ GEQ
 %token AND OR NOT
-%token DOT2 SLASH2 C2
+%token DOT2 SLASH C2
 %token INVALID_STRING
 
 %type<string> STRING IDENTIFIER name
-%type<integer> INTEGER INVALID_STRING
+%type<integer> INTEGER INVALID_STRING SLASH
 %type<real> REAL
 
 %type<expr> expr scalar or-expr and-expr test-expr term-expr
@@ -124,7 +124,8 @@ node-set    : node-path
             | node-set '|' node-path            {$$ = ast.punion($1,$3);}
             ;
 node-path   : '.'                               {$$ = ast.local_path();}
-            | SLASH2                            {$$ = ast.context_path();}
+            | '/'                               {$$ = ast.context_path(0);}
+            | SLASH                             {$$ = ast.context_path($1);}
             | name                              {
                                                   $$ = ast.path_chain(
                                                     ast.local_path(),
@@ -135,9 +136,14 @@ node-path   : '.'                               {$$ = ast.local_path();}
                                                     ast.local_path(),
                                                     ast.pename($2));
                                                 }
-            | SLASH2 name                       {
+            | '/' name                          {
                                                   $$ = ast.path_chain(
-                                                    ast.context_path(),
+                                                    ast.context_path(0),
+                                                    ast.pename($2));
+                                                }
+            | SLASH name                        {
+                                                  $$ = ast.path_chain(
+                                                    ast.context_path($1),
                                                     ast.pename($2));
                                                 }
             | DOT2 name                         {

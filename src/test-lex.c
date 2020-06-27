@@ -49,7 +49,8 @@ main(void)
   assert(joqe_yylex(&yylval, &build) == INTEGER);
   assert(yylval.integer == 94782104204944ll);
 
-  assert(joqe_yylex(&yylval, &build) == SLASH2);
+  assert(joqe_yylex(&yylval, &build) == SLASH);
+  assert(yylval.integer == 1);
   assert(joqe_yylex(&yylval, &build) == '[');
   assert(joqe_yylex(&yylval, &build) == ']');
   assert(joqe_yylex(&yylval, &build) == AND);
