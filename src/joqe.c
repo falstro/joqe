@@ -224,7 +224,6 @@ usage(FILE *out)
     "\t             twice to suppress quoting of all strings.\n"
     "\t-A           Arrays at top level will be 'shell lists' without brackets\n"
     "\t             and using space as separators.\n"
-    "\t             the double -r is set.\n"
     "\t-h           Print this help.\n"
     "\n", argv0, argv0, argv0);
 }
@@ -273,6 +272,7 @@ main(int argc, char **argv)
       i = argc;
     } else {
       src = joqe_lex_source_string(argv[i++]);
+      src.name = "expression #1";
     }
 
     exp = joqe_build_init(src);
