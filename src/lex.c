@@ -19,7 +19,7 @@
           case '5': case '6': case '7': case '8': case '9'
 
 #define NONIDENTS '<': case '>': case '\\': case '"': case '\'': \
-    case SINGLES: case DOUBLES: case WHITE
+    case SINGLES: case DOUBLES: case WHITE: case ';': case '~': case '?'
 
 typedef struct
 {
@@ -47,7 +47,7 @@ ident(lexparam l)
     case NONIDENTS:
       c = 0; break;
     default:
-      if (c < 32) {
+      if (c < 48) {
         c = 0; break;
       }
       joqe_build_appendstring(l.builder, c);
@@ -69,7 +69,7 @@ nonident(int c)
     case NONIDENTS:
       return 1;
     default:
-      if(c < 32)
+      if(c < 48)
         return 1;
   }
   return 0;
@@ -300,6 +300,7 @@ joqe_yylex(JOQE_YYSTYPE *yylval, joqe_build *build)
     case ':': if(c == consume(l)) {consume(l); return C2;} else return c;
     case '<': if('=' == consume(l)) {consume(l); return LEQ;} else return c;
     case '>': if('=' == consume(l)) {consume(l); return GEQ;} else return c;
+    case '!': if('=' == consume(l)) {consume(l); return NEQ;} else return c;
     case WHITE:
       c = consume(l);
       break;
