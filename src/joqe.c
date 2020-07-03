@@ -40,6 +40,7 @@ typedef struct {
   int         nllen;
   int         ascii;
   int         array;
+  const char *separator;
 } config;
 
 void dump(joqe_node n, int lvl, config *c);
@@ -88,7 +89,7 @@ dump_vs(joqe_nodels *ns, int lvl, config *c)
       ls = (joqe_nodels*) ls->ll.n;
     goto first;
     do {
-      printf("%c", c->array ? ' ' : ',');
+      printf("%c", c->array ? *c->separator : ',');
       first: if(ind) printf("%-*s", ind, c->nl);
       dump(ls->n, lvl, c);
     } while((ls = (joqe_nodels*)ls->ll.n) != ns);
@@ -221,7 +222,10 @@ usage(FILE *out)
     "\t-r           Print raw (don't quote) strings at the top level. Use\n"
     "\t             twice to suppress quoting of all strings.\n"
     "\t-A           Arrays at top level will be 'shell lists' without brackets\n"
-    "\t             and using space as separators.\n"
+    "\t             and using space as separators. Use with double -r to get\n"
+    "\t             unquoted strings.\n"
+    "\t-S SEP       Use SEP separator instead of space for shell lists. This\n"
+    "\t             option implies -A.\n"
     "\t-h           Print this help.\n"
     "\n", argv0, argv0, argv0);
 }
@@ -231,11 +235,11 @@ main(int argc, char **argv)
 {
   int i, opt, r = 0;
   const char* expfile = 0;
-  config c = {};
+  config c = {.separator = " "};
 
   argv0 = argv[0];
 
-  while((opt = getopt(argc, argv, "hI:af:FqrA")) != -1) switch(opt) {
+  while((opt = getopt(argc, argv, "hI:af:FqrAS:")) != -1) switch(opt) {
     case '?': usage(stderr); return 1;
     case 'h': usage(stdout); return 0;
     case 'f': expfile = optarg; break;
@@ -250,6 +254,7 @@ main(int argc, char **argv)
     case 'r': c.raw++; break;
     case 'a': c.ascii++; break;
     case 'A': c.array++; break;
+    case 'S': c.array = c.array ? c.array : 1; c.separator = optarg; break;
   }
   i = optind;
 
