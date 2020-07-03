@@ -210,8 +210,6 @@ usage(FILE *out)
     "\n"
     "Expression interpretation:\n"
     "\t-f           Read expression from a file.\n"
-    "\t-P           Pipe mode, concatenate all arguments into one expression\n"
-    "\t             and only read from standard in.\n"
     "\n"
     "Options:\n"
     "\t-I INDENT    Indent each level by INDENT number of spaces. Implies -F.\n"
@@ -231,13 +229,13 @@ usage(FILE *out)
 int
 main(int argc, char **argv)
 {
-  int i, opt, r = 0, p = 0;
+  int i, opt, r = 0;
   const char* expfile = 0;
   config c = {};
 
   argv0 = argv[0];
 
-  while((opt = getopt(argc, argv, "hI:af:FqPrA")) != -1) switch(opt) {
+  while((opt = getopt(argc, argv, "hI:af:FqrA")) != -1) switch(opt) {
     case '?': usage(stderr); return 1;
     case 'h': usage(stdout); return 0;
     case 'f': expfile = optarg; break;
@@ -247,7 +245,6 @@ main(int argc, char **argv)
       if(*e || !*optarg)
         return fail("indentation must be numeric: %s", optarg);
     } break;
-    case 'P': p = 1; break;
     case 'q': q = 1; break;
     case 'F': c.pp++; break;
     case 'r': c.raw++; break;
@@ -267,9 +264,6 @@ main(int argc, char **argv)
     joqe_lex_source src;
     if(expfile) {
       src = joqe_lex_source_file(expfile);
-    } else if(p) {
-      src = joqe_lex_source_stringarray(argc-i, argv+i);
-      i = argc;
     } else {
       src = joqe_lex_source_string(argv[i++]);
       src.name = "expression #1";
