@@ -1,6 +1,6 @@
 BISON=/usr/bin/bison
 CC=gcc
-CFLAGS=-Wall -g -MMD -O3
+CFLAGS=-Wall -g -MMD # -O3
 LDFLAGS=
 LDLIBS=-lm
 PREFIX=/usr/local

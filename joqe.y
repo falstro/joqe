@@ -12,7 +12,7 @@
 %type<real> REAL
 
 %type<expr> expr scalar or-expr and-expr test-expr term-expr
-            term factor unary
+            term factor unary string
 %type<construct> object-entry
 %type<construct> array-entry
 %type<pe> function filter
@@ -75,12 +75,16 @@ start       : construct-expr
 
 expr        : or-expr
             ;
-scalar      : STRING                            {$$ = ast.string_value($1);}
+scalar      : string
             | INTEGER                           {$$ = ast.integer_value($1);}
             | REAL                              {$$ = ast.real_value($1);}
             | _TRUE                             {$$ = ast.true_value;}
             | _FALSE                            {$$ = ast.false_value;}
             | _NULL                             {$$ = ast.null_value;}
+            ;
+
+string      : STRING                            {$$ = ast.string_value($1);}
+            | string STRING                     {$$ = ast.string_append($1, $2);}
             ;
 
 or-expr     : and-expr

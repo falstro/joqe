@@ -5,9 +5,15 @@
 
 #include <stdint.h>
 
+typedef enum {
+  joqe_result_ok    = 0x00,
+  joqe_result_fail  = 0x01
+} joqe_result_status;
+
 typedef struct joqe_result {
   joqe_nodels *ls;
   joqe_nodels *freels;
+  int          status;
 } joqe_result;
 
 joqe_nodels*  joqe_result_alloc_node (joqe_result *r);
@@ -79,6 +85,7 @@ typedef struct joqe_ast_expr {
     const char     *s;
     int64_t         i;
     double          d;
+    joqe_node       n;
     joqe_ast_path   path;
     joqe_ast_expr  *e;
     struct {
@@ -92,19 +99,6 @@ typedef struct joqe_ast_expr {
   } u;
 } joqe_ast_expr;
 
-struct joqe_ast_pathelem {
-  joqe_list     ll;
-  int (*visit) (struct joqe_ast_pathelem *p,
-                joqe_node *n, joqe_ctx *c,
-                joqe_result *r,
-                struct joqe_ast_pathelem *end);
-  union {
-    const char     *key;
-    int             idx;
-    joqe_ast_expr   expr;
-  } u;
-};
-
 typedef struct {
   joqe_list ll;
   joqe_ast_expr e;
@@ -112,7 +106,31 @@ typedef struct {
 
 typedef struct {
   joqe_ast_paramls *ls;
+  int               count;
 } joqe_ast_params;
+
+typedef int (*joqe_function_call) (struct joqe_ast_pathelem *p,
+                                   joqe_node *n, joqe_ctx *c,
+                                   joqe_nodels **parameters,
+                                   joqe_result *r);
+typedef struct {
+  joqe_function_call call;
+  joqe_ast_params ps;
+} joqe_ast_function;
+
+struct joqe_ast_pathelem {
+  joqe_list     ll;
+  int (*visit) (struct joqe_ast_pathelem *p,
+                joqe_node *n, joqe_ctx *c,
+                joqe_result *r,
+                struct joqe_ast_pathelem *end);
+  union {
+    const char       *key;
+    int               idx;
+    joqe_ast_expr     expr;
+    joqe_ast_function func;
+  } u;
+};
 
 typedef struct joqe_ast_obentry {
   joqe_ast_construct v;
@@ -149,6 +167,7 @@ typedef enum {
 
 extern struct joqe_ast_api {
   joqe_ast_expr (*string_value)(const char* s);
+  joqe_ast_expr (*string_append)(joqe_ast_expr e, const char* s);
   joqe_ast_expr (*integer_value)(int i);
   joqe_ast_expr (*real_value)(double d);
 

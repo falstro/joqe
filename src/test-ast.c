@@ -50,6 +50,11 @@ int cases(joqe_node *doc)
       || check("results[0].color", doc, "'red'")
       || check("results[0 and color].color", doc, "'red'")
       || check("results[0].color or null", doc, "'red'")
+      || check("'abc''def' = 'abc''def'", doc, "true")
+      || check("'abc''def' = 'abcdef'", doc, "true")
+      || check("'abc''def' = 'ab''cd''ef'", doc, "true")
+      || check("'abc''def' = 'ab''dc''ef'", doc, "false")
+      || check("meta['prio''rity']", doc, "1")
   ;
 }
 

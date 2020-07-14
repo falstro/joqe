@@ -35,6 +35,7 @@ joqe_result_copy_node (joqe_node *n)
   switch(JOQE_TYPE_VALUE(n->type)) {
     case joqe_type_none_object:
     case joqe_type_none_array:
+    case joqe_type_none_stringls:
       if(n->u.ls) {
         if(n->u.ls->n.type == joqe_type_ref_cnt) {
           n->u.ls->n.u.i++;
@@ -46,7 +47,7 @@ joqe_result_copy_node (joqe_node *n)
 
           *e = refCnt;
           joqe_list_append((joqe_list**)&n->u.ls, &e->ll);
-          n->u.ls = (joqe_nodels*) n->u.ls->ll.p;
+          n->u.ls = e; // (joqe_nodels*) n->u.ls->ll.p;
         }
       }
   }
@@ -79,7 +80,8 @@ joqe_result_clear_node (joqe_node n, joqe_result *r)
 {
   switch(JOQE_TYPE_VALUE(n.type)) {
     case joqe_type_none_object:
-    case joqe_type_none_array: {
+    case joqe_type_none_array:
+    case joqe_type_none_stringls: {
       joqe_result_free_list(n.u.ls, r);
       n.u.ls = 0;
     } /* fall through */
@@ -131,6 +133,9 @@ nodels_free(joqe_nodels *ls)
       case joqe_type_none_array:
         fprintf(stderr, "array\n");
         break;
+      case joqe_type_none_stringls:
+        fprintf(stderr, "stringls\n");
+        break;
       default:
         fprintf(stderr, "broken?\n");
     }
@@ -173,9 +178,17 @@ joqe_result_pop(joqe_result *base, joqe_result *r)
   if(base) {
     joqe_result_free_list(r->ls, r);
     joqe_result_free_transfer(base, r);
+    base->status |= r->status;
   } else {
     joqe_result_destroy(r);
   }
+}
+
+static void
+joqe_result_transfer(joqe_result *base, joqe_result *r)
+{
+  joqe_result_append(base, r->ls);
+  r->ls = 0;
 }
 
 
@@ -186,6 +199,70 @@ result_nodels (joqe_result *r, joqe_type type)
   ls->n.type = type;
   joqe_result_append(r, ls);
   return ls;
+}
+
+static int
+strlscmp(joqe_node l, joqe_node r)
+{
+  int le, re, e, d, lo = 0, ro = 0;
+
+  assert(JOQE_TYPE_VALUE(l.type) == joqe_type_none_stringls);
+  assert(JOQE_TYPE_VALUE(r.type) == joqe_type_none_stringls);
+
+  joqe_nodels *li = l.u.ls, *ri = r.u.ls;
+  joqe_nodels *endl = li, *endr = ri;
+
+  joqe_nodels emptyls = {.n = {joqe_type_none_string, .u = {.s = ""}}};
+  emptyls.ll.n = emptyls.ll.p = &emptyls.ll;
+
+  if(!li) { endl = li = &emptyls; }
+  else if(li->n.type == joqe_type_ref_cnt) { li = (joqe_nodels*)li->ll.n; }
+  if(!ri) { endr = ri = &emptyls; }
+  else if(ri->n.type == joqe_type_ref_cnt) { ri = (joqe_nodels*)ri->ll.n; }
+
+  le = strlen(li->n.u.s);
+  re = strlen(ri->n.u.s);
+
+  do {
+    e = min(le-lo, re-ro);
+    assert(e >= 0);
+
+    if(e) {
+      if((d = strncmp(li->n.u.s + lo, ri->n.u.s + ro, e)))
+        return d;
+    }
+
+    lo += e;
+    ro += e;
+
+    if(lo == le) {
+      lo = 0;
+      do {
+        li = (joqe_nodels*)li->ll.n;
+        le = (li == endl) ? -1 : strlen(li->n.u.s);
+      } while(le == 0);
+    }
+    if(ro == re) {
+      ro = 0;
+      do {
+        ri = (joqe_nodels*)ri->ll.n;
+        re = (ri == endr) ? -1 : strlen(ri->n.u.s);
+      } while(re == 0);
+    }
+  } while(le >= 0 && re >= 0);
+
+  return le < 0 ? re < 0 ? 0 : -1 : 1;
+}
+
+static int
+strlsstrcmp(joqe_node l, const char *s)
+{
+  joqe_nodels ls = {.n = {joqe_type_none_string, .u = {.s = s}}};
+  joqe_node r = {joqe_type_none_stringls, .u = {.ls = &ls}};
+
+  ls.ll.n = ls.ll.p = &ls.ll;
+
+  return strlscmp(l, r);
 }
 
 static joqe_ast_construct*
@@ -297,6 +374,48 @@ ast_string_value(const char *s)
 {
   joqe_ast_expr e = {eval_string_value};
   e.u.s = s;
+  return e;
+}
+
+static int
+eval_stringls_value(joqe_ast_expr *e, joqe_node *n, joqe_ctx *ctx,
+                    joqe_result *r)
+{
+  if(!n) {
+    nodels_free(e->u.n.u.ls);
+    return 0;
+  }
+  if(r) {
+    joqe_nodels *ls = result_nodels(r, joqe_type_none_stringls);
+    ls->n = joqe_result_copy_node(&e->u.n);
+    return e->u.n.u.ls ? 1 : 0;
+  } else {
+    /* reversed strlsstrcmp arguments, so result should be negated,
+       but it compares to 0 anyway. */
+    return JOQE_TYPE_KEY(n->type) == joqe_type_string_none
+      && n->k.key && 0 == strlsstrcmp(e->u.n, n->k.key);
+  }
+}
+
+static joqe_ast_expr
+ast_string_append(joqe_ast_expr e, const char *s)
+{
+  if(e.evaluate == eval_string_value) {
+    joqe_ast_expr ne = {eval_stringls_value,
+                        .u = {.n = {joqe_type_none_stringls}}};
+    joqe_nodels prev = {.n = {joqe_type_none_string, .u = {.s = e.u.s}}},
+               *prevls = malloc(sizeof(*prevls));
+    *prevls = prev;
+
+    joqe_list_append((joqe_list**)&ne.u.n.u.ls, &prevls->ll);
+    e = ne;
+  } else assert(e.evaluate == eval_stringls_value);
+
+  joqe_nodels append = {.n = {joqe_type_none_string, .u = {.s = s}}},
+             *appendls = malloc(sizeof(*appendls));
+  *appendls = append;
+
+  joqe_list_append((joqe_list**)&e.u.n.u.ls, &appendls->ll);
   return e;
 }
 
@@ -458,6 +577,21 @@ eval_compare(joqe_ast_expr *e, joqe_node *n, joqe_ctx *c, joqe_result *r)
           case joqe_type_none_string: switch(bt) {
             case joqe_type_none_string:
               cmp = strcmp(a->u.s, b->u.s);
+              hit = 1;
+              break;
+            case joqe_type_none_stringls:
+              cmp = -strlsstrcmp(*b, a->u.s);
+              hit = 1;
+              break;
+            default:;
+          } break;
+          case joqe_type_none_stringls: switch(bt) {
+            case joqe_type_none_string:
+              cmp = strlsstrcmp(*a, b->u.s);
+              hit = 1;
+              break;
+            case joqe_type_none_stringls:
+              cmp = strlscmp(*a, *b);
               hit = 1;
               break;
             default:;
@@ -666,8 +800,8 @@ eval_posneg(int mul, joqe_ast_expr *e, joqe_node *n, joqe_ctx *c, joqe_result *r
     joqe_node rx = *a;
     joqe_type t = JOQE_TYPE_VALUE(a->type);
     switch(t) {
-      case joqe_type_none_integer: rx.u.i = -a->u.i; break;
-      case joqe_type_none_real: rx.u.d = -a->u.d; break;
+      case joqe_type_none_integer: rx.u.i = mul * a->u.i; break;
+      case joqe_type_none_real: rx.u.d = mul * a->u.d; break;
       default:
         continue;
     }
@@ -822,6 +956,7 @@ ast_params_append(joqe_ast_params ps, joqe_ast_expr e)
   joqe_ast_paramls *ls = calloc(1, sizeof(*ls));
   ls->e = e;
   joqe_list_append((joqe_list**)&ps.ls, &ls->ll);
+  ps.count++;
   return ps;
 }
 
@@ -957,6 +1092,127 @@ visit_pe_free (joqe_ast_pathelem *p, joqe_ast_pathelem *end)
     return ast_pathelem_free(nxt);
   }
   return 0;
+}
+
+static int
+call_concat (joqe_ast_pathelem *pe,
+             joqe_node *n, joqe_ctx *c,
+             joqe_nodels **ps, joqe_result *r)
+{
+  int pi, pcount = pe->u.func.ps.count;
+
+  joqe_nodels *rn = result_nodels(r, joqe_type_none_stringls);
+  for(pi = 0; pi < pcount; ++pi) {
+    joqe_nodels *i;
+    if((i = ps[pi])) do {
+      if (JOQE_TYPE_VALUE(i->n.type) != joqe_type_none_string)
+        continue;
+      joqe_nodels *sn = joqe_result_alloc_node(r);
+      sn->n = joqe_result_copy_node(&i->n);
+      joqe_list_append((joqe_list**)&rn->n.u.ls, &sn->ll);
+    } while((i = (joqe_nodels*)i->ll.n) != ps[pi]);
+  }
+  if(!rn->n.u.ls) {
+    joqe_result_free_node(rn, r);
+    return 0;
+  }
+  return 1;
+}
+
+static int
+ast_params_destroy(joqe_ast_params *p)
+{
+  joqe_ast_paramls *i, *e, *ni;
+  if ((e = i = p->ls)) do {
+    i->e.evaluate(&i->e, IMPLODE);
+    ni = (joqe_ast_paramls*)i->ll.n;
+    free(i);
+  } while((i = ni) != e);
+  return 0;
+}
+
+static int
+ast_params_evaluate(joqe_ast_params *p, joqe_node *n, joqe_ctx *c,
+                    joqe_result *r, joqe_nodels **out)
+{
+  joqe_ast_paramls *i, *e, *ni;
+  int outi = 0;
+  if ((e = i = p->ls)) do {
+    assert(outi < p->count);
+    joqe_result rx = joqe_result_push(r);
+
+    i->e.evaluate(&i->e, n, c, &rx);
+    out[outi++] = rx.ls;
+    rx.ls = 0;
+
+    joqe_result_pop(r, &rx);
+    ni = (joqe_ast_paramls*)i->ll.n;
+  } while((i = ni) != e);
+  return 0;
+}
+
+static int
+visit_pefunction (joqe_ast_pathelem *p,
+                  joqe_node *n, joqe_ctx *c,
+                  joqe_result *r, joqe_ast_pathelem *end)
+{
+  joqe_nodels *i, *e;
+  int pi, pcount = p->u.func.ps.count;
+  int found = 0;
+
+  if(!n) {
+    ast_params_destroy(&p->u.func.ps);
+    return visit_pe_free(p, end);
+  }
+
+  if(!p->u.func.call) {
+    r->status |= joqe_result_fail;
+    return 0;
+  }
+
+  joqe_nodels **params = alloca(sizeof(joqe_nodels*) * pcount);
+  ast_params_evaluate(&p->u.func.ps, n, c, r, params);
+
+  joqe_result fr = joqe_result_push(r);
+  found = p->u.func.call(p, n, c, params, &fr);
+
+  for(pi = 0; pi < pcount; ++pi) joqe_result_free_list(params[pi], r);
+
+  if(p->ll.n != &end->ll) {
+    found = 0;
+    if((e = i = fr.ls)) do {
+      joqe_ast_pathelem *nxt = (joqe_ast_pathelem*) p->ll.n;
+      found += nxt->visit(nxt, &i->n, c, r, end);
+    } while((!found || r) && (i = (joqe_nodels*)i->ll.n) != e);
+  } else {
+    if(r)
+      joqe_result_transfer(r, &fr);
+  }
+
+  joqe_result_pop(r, &fr);
+  return found;
+}
+
+static joqe_ast_pathelem
+ast_pefunction(const char *name, joqe_ast_params p)
+{
+  struct {
+    const char *name;
+    joqe_function_call call;
+  } funcs[] = {
+    {"concat", call_concat},
+    {0}
+  }, *f;
+
+  for(f = funcs; f->name && strcmp(f->name, name); ++f)
+    ;
+
+  joqe_ast_pathelem pefunction = {
+    .visit = visit_pefunction,
+    .u = {.func = {f->call, p}}
+  };
+
+  return pefunction;
 }
 
 static int
@@ -1397,6 +1653,7 @@ ast_array_entry(joqe_ast_construct v)
 
 struct joqe_ast_api ast = {
   ast_string_value, // joqe_ast_expr (*string_value)(const char* s);
+  ast_string_append, // joqe_ast_expr (*string_append)(joqe_ast_expr e, const char* s);
   ast_integer_value, // joqe_ast_expr (*integer_value)(int i);
   ast_real_value, // joqe_ast_expr (*real_value)(double d);
 
@@ -1424,7 +1681,7 @@ struct joqe_ast_api ast = {
   ast_context_path, // joqe_ast_path (*context_path)();
   ast_path_chain, // joqe_ast_path (*path_chain)(joqe_ast_path l, joqe_ast_pathelem pe);
 
-  0, // joqe_ast_pathelem (*pefunction)(const char *name, joqe_ast_params p);
+  ast_pefunction, // joqe_ast_pathelem (*pefunction)(const char *name, joqe_ast_params p);
   ast_peflex, // joqe_ast_pathelem (*peflex)();
   ast_pename, // joqe_ast_pathelem (*pename)(const char *name);
   ast_pefilter, // joqe_ast_pathelem (*pefilter)(joqe_ast_expr filter);

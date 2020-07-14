@@ -12,6 +12,7 @@
 #include <string.h>
 
 #include <unistd.h>
+#include <assert.h>
 
 const char *argv0;
 
@@ -97,9 +98,8 @@ dump_vs(joqe_nodels *ns, int lvl, config *c)
 }
 
 void
-dumpstring(const char *s, config *c)
+dumpsubstring(const char *s, config *c)
 {
-  putchar('\"');
   for(;*s;s++) {
     switch(*s) {
       case '\"': putchar('\\'); putchar('\"'); break;
@@ -132,7 +132,73 @@ dumpstring(const char *s, config *c)
         }
     }
   }
+}
+
+void
+dumpstring(const char *s, config *c)
+{
   putchar('\"');
+  dumpsubstring(s, c);
+  putchar('\"');
+}
+
+void
+dumpstringlsrecurse(joqe_nodels *ls, config *c)
+{
+  joqe_nodels *i, *e;
+  if((i = e = ls)) do {
+    if(i->n.type == joqe_type_ref_cnt) continue;
+    switch(JOQE_TYPE_VALUE(i->n.type)) {
+      case joqe_type_none_string:
+        dumpsubstring(i->n.u.s, c);
+        break;
+      case joqe_type_none_stringls:
+        dumpstringlsrecurse(i->n.u.ls, c);
+        break;
+      default:
+        printf("<corrupt string list %d>", i->n.type);
+        return;
+    }
+  } while((i = (joqe_nodels*)i->ll.n) != e);
+}
+
+void
+dumpstringls(joqe_nodels *ls, config *c)
+{
+  putchar('\"');
+  dumpstringlsrecurse(ls, c);
+  putchar('\"');
+}
+
+void
+dumprawsubstring(const char* s, config *c)
+{
+  printf("%s", s);
+}
+
+void
+dumprawstring(const char* s, config *c)
+{
+  dumprawsubstring(s, c);
+}
+
+void
+dumprawstringls(joqe_nodels *ls, config *c)
+{
+  joqe_nodels *i, *e;
+  if((i = e = ls)) do {
+    if(i->n.type == joqe_type_ref_cnt) continue;
+    switch(JOQE_TYPE_VALUE(i->n.type)) {
+      case joqe_type_none_string:
+        dumprawsubstring(i->n.u.s, c);
+        break;
+      case joqe_type_none_stringls:
+        dumprawstringls(i->n.u.ls, c);
+        break;
+      default:
+        printf("corrupt string list %d", i->n.type);
+    }
+  } while((i = (joqe_nodels*)i->ll.n) != e);
 }
 
 void
@@ -145,9 +211,15 @@ dump(joqe_node n, int lvl, config *c)
       printf("broken"); break;
     case joqe_type_none_string:
       if(c->raw > 1 || (c->raw && !lvl))
-        printf("%s", n.u.s);
+        dumprawstring(n.u.s, c);
       else
         dumpstring(n.u.s, c);
+      break;
+    case joqe_type_none_stringls:
+      if(c->raw > 1 || (c->raw && !lvl))
+        dumprawstringls(n.u.ls, c);
+      else
+        dumpstringls(n.u.ls, c);
       break;
     case joqe_type_none_integer:
       printf("%ld", n.u.i); break;

@@ -6,7 +6,7 @@
 
 #include <string.h>
 
-#define SLABSZ 0x800000
+#define SLABSZ 0x10000
 #define STRINGSZ (SLABSZ-sizeof(struct joqe_slab))
 
 #define MARKERMASK  0xFF000000u
