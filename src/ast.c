@@ -1120,6 +1120,18 @@ call_concat (joqe_ast_pathelem *pe,
 }
 
 static int
+call_name (joqe_ast_pathelem *pe,
+           joqe_node *n, joqe_ctx *c,
+           joqe_nodels **ps, joqe_result *r)
+{
+  if(JOQE_TYPE_KEY(n->type) == joqe_type_string_none) {
+      if (r) result_nodels(r, joqe_type_none_string)->n.u.s = n->k.key;
+      return 1;
+  }
+  return 0;
+}
+
+static int
 ast_params_destroy(joqe_ast_params *p)
 {
   joqe_ast_paramls *i, *e, *ni;
@@ -1201,6 +1213,7 @@ ast_pefunction(const char *name, joqe_ast_params p)
     joqe_function_call call;
   } funcs[] = {
     {"concat", call_concat},
+    {"name", call_name},
     {0}
   }, *f;
 
