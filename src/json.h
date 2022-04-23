@@ -25,6 +25,7 @@ typedef enum {
   joqe_type_none_real    = 0x06,
   joqe_type_none_object  = 0x07,
   joqe_type_none_array   = 0x08,
+  joqe_type_none_stringls= 0x09,
   joqe_type_string_none    = 0x00|JOQE_TYPE_KEY_STRING,
   joqe_type_string_true    = 0x01|JOQE_TYPE_KEY_STRING,
   joqe_type_string_false   = 0x02|JOQE_TYPE_KEY_STRING,
@@ -34,6 +35,7 @@ typedef enum {
   joqe_type_string_real    = 0x06|JOQE_TYPE_KEY_STRING,
   joqe_type_string_object  = 0x07|JOQE_TYPE_KEY_STRING,
   joqe_type_string_array   = 0x08|JOQE_TYPE_KEY_STRING,
+  joqe_type_string_stringls= 0x09|JOQE_TYPE_KEY_STRING,
   joqe_type_int_none    = 0x00|JOQE_TYPE_KEY_INT,
   joqe_type_int_true    = 0x01|JOQE_TYPE_KEY_INT,
   joqe_type_int_false   = 0x02|JOQE_TYPE_KEY_INT,
@@ -43,6 +45,7 @@ typedef enum {
   joqe_type_int_real    = 0x06|JOQE_TYPE_KEY_INT,
   joqe_type_int_object  = 0x07|JOQE_TYPE_KEY_INT,
   joqe_type_int_array   = 0x08|JOQE_TYPE_KEY_INT,
+  joqe_type_int_stringls= 0x09|JOQE_TYPE_KEY_INT,
   joqe_type_ref_cnt     = 0xfe
 } joqe_type;
 

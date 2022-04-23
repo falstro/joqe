@@ -55,6 +55,7 @@ int cases(joqe_node *doc)
       || check("'abc''def' = 'ab''cd''ef'", doc, "true")
       || check("'abc''def' = 'ab''dc''ef'", doc, "false")
       || check("meta['prio''rity']", doc, "1")
+      || check("meta.concat(tags[0],' ',tags[1]) = 'ok information'", doc, "true")
   ;
 }
 
@@ -133,6 +134,7 @@ int equal(joqe_nodels *actual, joqe_nodels *expected)
         break;
       case joqe_type_none_object:
       case joqe_type_none_array:
+      case joqe_type_none_stringls:
         if((r = equal(actual->n.u.ls, expected->n.u.ls)))
           return r;
         break;
