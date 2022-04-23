@@ -111,11 +111,19 @@ the outer `.[]` selects all rows, `.[1] % 2 = 0` filters all rows where
 the second element modulo 2 equals zero (i.e. is even). Note how `.`
 refers to the root array in the first instance and to the sub-array in
 the second instance. To refer to the context object in the filter
-expression use `//`. The context reference is never implied, and to use
-a named path rooted in the context node you'll need to use `//` as well,
-e.g. `//.meta`, for example:
+expression use `/`. The context reference is never implied, and to use
+a named path rooted in the context node you'll need to use `/` as well,
+e.g. `/meta`, for example:
 
-    results[id = //.meta.main]
+    results[id = /meta.main]
+
+The contexts are stacked, access contexts up the stack by repeating `/`.
+For example
+
+    results[id = /meta.main]::{id, name, //meta["request-id"]}
+
+Would use the result object as an intermediate object for constructing the
+output, while referring the `meta["request-id"]` from the outer object.
 
 Descendant
 ----------
@@ -437,7 +445,8 @@ Implementation notes and limitations
 
 The way the parser is currently organized, there is a hard limit on
 string lengths. A single string literal may be no longer than 4Kb at
-this time.
+this time. The internals can handle longer strings (for non-key strings)
+by chaining strings but the parser does not automatically create these.
 
 The parser can detect and read all JSON specified encodings, i.e. UTF-8,
 -16, and -32 both big and little endian, but always stores strings in

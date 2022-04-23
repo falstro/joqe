@@ -1047,7 +1047,7 @@ visit_context_path (joqe_ast_path *p,
     } else if(!cc) {
       v = 0;
     } else {
-      v = p->pes->visit(p->pes, cc->node, cc, r, p->pes);
+      v = p->pes->visit(p->pes, cc->node, c, r, p->pes);
     }
   } else if(n) {
     if(cc) {
