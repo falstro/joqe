@@ -7,7 +7,7 @@
 #include <string.h>
 
 #define SLABSZ 0x10000
-#define STRINGSZ (SLABSZ-sizeof(struct joqe_slab))
+#define STRINGSZ (SLABSZ-sizeof(struct joqe_slab)-1)
 
 #define MARKERMASK  0xFF000000u
 #define MARKERLAST  0x01000000u
@@ -28,6 +28,7 @@ joqe_slab_create ()
   joqe_slab *s = malloc(SLABSZ);
   s->nxt = 0;
   s->mark = s->write = 0;
+  s->base[STRINGSZ] = 0;
   //D("allocating slab\n");
   return s;
 }
@@ -107,21 +108,21 @@ joqe_build_appendstring(joqe_build *build, int c)
 
   joqe_slab *s = build->current;
 
-  if(s->write >= STRINGSZ) {
+  // leave space for zero termination, if this isn't one.
+  int margin = c ? 2 : 1;
+  int maxlen = STRINGSZ - margin;
+  if(s->write > maxlen) {
     int sz = s->write - s->mark;
-    if(sz + 1 >= STRINGSZ)
-      // TODO invalid string, too long; chain strings eventually?
+    if(sz > maxlen) {
       return 1;
+    }
 
     s->write = s->mark;
 
-    s = build->first;
-
-    do {
+    for (s = build->first; s->write + sz > maxlen; s = s->nxt) {
       if(!s->nxt)
         s->nxt = joqe_slab_create();
-      s = s->nxt;
-    } while (sz + 1 >= STRINGSZ - s->write);
+    }
 
     if(sz) {
       memcpy(&s->base[s->mark],

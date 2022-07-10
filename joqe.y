@@ -1,5 +1,5 @@
 %token IDENTIFIER
-%token STRING INTEGER REAL
+%token STRING PARTIALSTRING INTEGER REAL
 %token _TRUE _FALSE _NULL
 %token MOD
 %token NEQ LEQ GEQ
@@ -7,12 +7,12 @@
 %token DOT2 SLASH C2
 %token INVALID_STRING
 
-%type<string> STRING IDENTIFIER name
+%type<string> STRING PARTIALSTRING IDENTIFIER name
 %type<integer> INTEGER INVALID_STRING SLASH
 %type<real> REAL
 
 %type<expr> expr scalar or-expr and-expr test-expr term-expr
-            term factor unary string
+            term factor unary string part-string
 %type<construct> object-entry
 %type<construct> array-entry
 %type<pe> function filter
@@ -85,6 +85,10 @@ scalar      : string
 
 string      : STRING                            {$$ = ast.string_value($1);}
             | string STRING                     {$$ = ast.string_append($1, $2);}
+            | part-string STRING                {$$ = ast.string_append($1, $2);}
+            ;
+part-string : PARTIALSTRING                     {$$ = ast.string_value($1);}
+            | part-string PARTIALSTRING         {$$ = ast.string_append($1, $2);}
             ;
 
 or-expr     : and-expr

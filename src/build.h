@@ -17,6 +17,7 @@ typedef struct joqe_build {
 
   hopscotch   interned;
 
+  int         mode;
   uint32_t    hash;
   uint32_t    block;
 

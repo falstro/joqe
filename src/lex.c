@@ -169,7 +169,12 @@ string(lexparam l, int delimiter)
       }
     }
 
-    joqe_build_appendstring(l.builder, c);
+    if(joqe_build_appendstring(l.builder, c)) {
+      if((l.yylval->string = joqe_build_closestring(l.builder))) {
+        l.builder->mode = delimiter;
+        return PARTIALSTRING;
+      }
+    }
     c = consume(l);
   }
   l.yylval->integer = INVALID_END_OF_INPUT;
@@ -259,7 +264,17 @@ int
 joqe_yylex(JOQE_YYSTYPE *yylval, joqe_build *build)
 {
   lexparam l = {yylval, build};
+  if (build->mode) {
+    int m = build->mode;
+    build->mode = 0;
+
+    switch(m) {
+      case '"': case '\'':
+        return string(l, m);
+    }
+  }
   int n, c = peek(l);
+
   while(1) switch(c) {
     case SINGLES:
       consume(l);

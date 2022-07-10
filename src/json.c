@@ -21,13 +21,10 @@ static int
 json_object(JOQE_YYSTYPE *yylval, joqe_build *b, joqe_node *n)
 {
   n->type |= joqe_type_none_object;
-  int token = joqe_yylex(yylval, b);
-  if(token == '}')
-    return 0;
-  goto first;
+  int token;
   do {
     token = joqe_yylex(yylval, b);
-    first: if(STRING != token) {
+    if(STRING != token) {
       //expected string or '}', not a string so check '}'
       //this allows {"a":"b",}
       break;
@@ -81,6 +78,25 @@ json_array(JOQE_YYSTYPE *yylval, joqe_build *b, joqe_node *n)
   joqe_yyerror(b, "expected ']'");
   return token?token:-1;
 }
+static int
+json_stringls(JOQE_YYSTYPE *yylval, joqe_build *b, joqe_node *n)
+{
+  n->type |= joqe_type_none_stringls;
+  int token = PARTIALSTRING;
+  while(token == PARTIALSTRING || token == STRING) {
+    joqe_nodels *ls, l = {
+      {}, {joqe_type_none_string, .u = {.s = yylval->string}}
+    };
+    *(ls = calloc(1, sizeof(*ls))) = l;
+    joqe_list_append((joqe_list**)&n->u.ls, &ls->ll);
+    if (token == PARTIALSTRING) {
+      token = joqe_yylex(yylval, b);
+    } else if (token == STRING) {
+      return 0;
+    }
+  }
+  return token?token:-1;
+}
 
 static int
 json_element(int token, JOQE_YYSTYPE *yylval, joqe_build *b, joqe_node *n)
@@ -90,6 +106,8 @@ json_element(int token, JOQE_YYSTYPE *yylval, joqe_build *b, joqe_node *n)
   {
     case '{': return json_object(yylval, b, n); break;
     case '[': return json_array(yylval, b, n); break;
+    case PARTIALSTRING:
+      return json_stringls(yylval, b, n); break;
     case STRING:
       n->type |= joqe_type_none_string;
       n->u.s = yylval->string;
