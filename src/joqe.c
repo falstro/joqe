@@ -42,6 +42,7 @@ typedef struct {
   int         ascii;
   int         array;
   const char *separator;
+  int         rs;
 } config;
 
 void dump(joqe_node n, int lvl, config *c);
@@ -285,19 +286,21 @@ usage(FILE *out)
     "\t-f           Read expression from a file.\n"
     "\n"
     "Options:\n"
+    "\t-F           Format/pretty-print the output. Use twice to align object\n"
+    "\t             values into columns.\n"
     "\t-I INDENT    Indent each level by INDENT number of spaces. Implies -F.\n"
     "\t-a           Limit output to ASCII only, encode all 8-bit and multibyte\n"
     "\t             characters using escape sequences (e.g. \\u12cd)\n"
-    "\t-F           Format/pretty-print the output. Use twice to align object\n"
-    "\t             values into columns.\n"
-    "\t-q           Quiet, fail silently on parsing errors.\n"
-    "\t-r           Print raw (don't quote) strings at the top level. Use\n"
-    "\t             twice to suppress quoting of all strings.\n"
+    "\t-r           Print raw strings (don't quote or escape) at the top \n"
+    "\t             level. Use twice to suppress quoting of all strings.\n"
     "\t-A           Arrays at top level will be 'shell lists' without brackets\n"
     "\t             and using space as separators. Use with double -r to get\n"
     "\t             unquoted strings.\n"
     "\t-S SEP       Use SEP separator instead of space for shell lists. This\n"
     "\t             option implies -A.\n"
+    "\t-R           Precede all output records with a ASCII record separator\n"
+    "\t             control code. A trailing line feed will still be appended.\n"
+    "\t-q           Quiet, fail silently on parsing errors.\n"
     "\t-h           Print this help.\n"
     "\n", argv0, argv0, argv0);
 }
@@ -311,7 +314,7 @@ main(int argc, char **argv)
 
   argv0 = argv[0];
 
-  while((opt = getopt(argc, argv, "hI:af:FqrAS:")) != -1) switch(opt) {
+  while((opt = getopt(argc, argv, "hI:af:FqrAS:R")) != -1) switch(opt) {
     case '?': usage(stderr); return 1;
     case 'h': usage(stdout); return 0;
     case 'f': expfile = optarg; break;
@@ -327,6 +330,7 @@ main(int argc, char **argv)
     case 'a': c.ascii++; break;
     case 'A': c.array++; break;
     case 'S': c.array = c.array ? c.array : 1; c.separator = optarg; break;
+    case 'R': c.rs++; break;
   }
   i = optind;
 
@@ -359,21 +363,20 @@ main(int argc, char **argv)
   joqe_ctx nullctx = {NULL, &nullnode};
 
   do {
-    joqe_build bdoc;
+    joqe_lex_source source;
     joqe_result rdoc = {};
     joqe_result jr = {};
     const char *fname;
     if(i >= argc || 0 == strcmp("-", argv[i])) {
       fname = i >= argc ? "<stdin>" : argv[i];
-      bdoc = joqe_build_init(joqe_lex_source_fd(0));
-      r = joqe_json(&bdoc);
-      bdoc.src.destroy(&bdoc.src);
+      source = joqe_lex_source_fd(0);
     } else {
       fname = argv[i];
-      bdoc = joqe_build_init(joqe_lex_source_file(argv[i]));
-      r = joqe_json(&bdoc);
-      bdoc.src.destroy(&bdoc.src);
+      source = joqe_lex_source_file(fname);
     }
+    joqe_build bdoc = joqe_build_init(source);
+    r = joqe_json(&bdoc);
+    source.destroy(&source);
 
     if(r) {
       if (!q) fprintf(stderr, "%s: %s: parse failed\n", argv0, fname);
@@ -396,6 +399,7 @@ main(int argc, char **argv)
 
     joqe_nodels *ls;
     if((ls = jr.ls)) do {
+      if(c.rs) printf("\x1e");
       dump(ls->n, 0, &c);
       printf("\n");
     } while((ls = (joqe_nodels*)ls->ll.n) != jr.ls);
